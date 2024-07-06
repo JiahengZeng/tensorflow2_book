@@ -4,7 +4,7 @@ from chapter3_1 import CNN
 from chapter3_1 import MNISTLoader
 
 """
-理解计算图对计算时间的节省13.5s --> 7s
+利用计算图对计算时间的节省13.5s --> 7s
 """
 
 num_batches = 400

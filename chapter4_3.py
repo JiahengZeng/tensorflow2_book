@@ -1,0 +1,32 @@
+import tensorflow as tf
+import os
+
+num_epochs = 10
+batch_size = 32
+learning_rate = 1e-3
+data_dir = '/datasets/cats_vs_dogs'
+train_cats_dir = data_dir + '/train/cats/'
+train_dogs_dir = data_dir + '/train/dogs/'
+test_cats_dir = data_dir + 'test/cats/'
+test_dogs_dir = data_dir + 'test/dogs/'
+
+def _decode_and_resize(filename, label):
+    image_string = tf.io.read_file(filename)
+    image_decoded = tf.image.decode_jpeg(image_string)
+    image_resized = tf.image.resize(image_decoded, [256, 256]) / 255.0
+    return image_resized, label
+
+if __name__ == "__main__":
+    train_cat_filenames = tf.constant([train_cats_dir + filename for filename in os.listdir(train_cats_dir)])
+    train_dog_filenames = tf.constant([train_dogs_dir + filename for filename in os.listdir(train_dogs_dir)])
+    train_filenames = tf.concat([train_cat_filenames, train_dog_filenames], axis=-1)
+    train_label = tf.constant(
+        tf.zeros(train_cat_filenames.shape, dtype=tf.int32),
+        tf.ones(train_dog_filenames.shape, dtype=tf.int32),
+        axis=-1
+    )
+
+    train_dataset = tf.data.Dataset.from_tensor_slices(train_filenames, train_label)
+    train_dataset = train_dataset.map(map_func=_decode_and_resize, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    train_dataset = train_dataset.shuffle(buffer_size=23000).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
+    
