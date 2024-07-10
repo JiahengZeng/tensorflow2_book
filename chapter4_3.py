@@ -16,6 +16,18 @@ def _decode_and_resize(filename, label):
     image_resized = tf.image.resize(image_decoded, [256, 256]) / 255.0
     return image_resized, label
 
+def sequential_model():
+    model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, 3, activation='relu', input_shape=(256, 256, 3)),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(32, 5, activation='relu'),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(2, activation='softmax')
+    ])
+    return model
+
 if __name__ == "__main__":
     train_cat_filenames = tf.constant([train_cats_dir + filename for filename in os.listdir(train_cats_dir)])
     train_dog_filenames = tf.constant([train_dogs_dir + filename for filename in os.listdir(train_dogs_dir)])
@@ -30,3 +42,10 @@ if __name__ == "__main__":
     train_dataset = train_dataset.map(map_func=_decode_and_resize, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     train_dataset = train_dataset.shuffle(buffer_size=23000).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
     
+    model = sequential_model
+    model.compile(
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        loss = tf.keras.losses.sparse_categorical_crossentropy,
+        metrics=[tf.keras.metrics.sparse_categorical_accuracy]
+    )
+    model.fit(train_dataset, epoches=num_epochs)
