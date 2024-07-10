@@ -4,11 +4,10 @@ import os
 num_epochs = 10
 batch_size = 32
 learning_rate = 1e-3
-data_dir = '/datasets/cats_vs_dogs'
+data_dir = './datasets/cats_vs_dogs'
 train_cats_dir = data_dir + '/train/cats/'
 train_dogs_dir = data_dir + '/train/dogs/'
-test_cats_dir = data_dir + 'test/cats/'
-test_dogs_dir = data_dir + 'test/dogs/'
+test_dir = data_dir + '/test/'
 
 def _decode_and_resize(filename, label):
     image_string = tf.io.read_file(filename)
@@ -32,20 +31,20 @@ if __name__ == "__main__":
     train_cat_filenames = tf.constant([train_cats_dir + filename for filename in os.listdir(train_cats_dir)])
     train_dog_filenames = tf.constant([train_dogs_dir + filename for filename in os.listdir(train_dogs_dir)])
     train_filenames = tf.concat([train_cat_filenames, train_dog_filenames], axis=-1)
-    train_label = tf.constant(
-        tf.zeros(train_cat_filenames.shape, dtype=tf.int32),
-        tf.ones(train_dog_filenames.shape, dtype=tf.int32),
+    train_label = tf.concat(
+        [tf.zeros(train_cat_filenames.shape, dtype=tf.int32),
+        tf.ones(train_dog_filenames.shape, dtype=tf.int32)], 
         axis=-1
     )
 
-    train_dataset = tf.data.Dataset.from_tensor_slices(train_filenames, train_label)
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_filenames, train_label))
     train_dataset = train_dataset.map(map_func=_decode_and_resize, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     train_dataset = train_dataset.shuffle(buffer_size=23000).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
     
-    model = sequential_model
+    model = sequential_model()
     model.compile(
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate),
         loss = tf.keras.losses.sparse_categorical_crossentropy,
         metrics=[tf.keras.metrics.sparse_categorical_accuracy]
     )
-    model.fit(train_dataset, epoches=num_epochs)
+    model.fit(train_dataset, epochs=num_epochs)
